@@ -10,7 +10,25 @@ pipeline {
         stage('Checkout') {
             steps {
                 checkout scm
-                sh 'echo passed'
+                sh 'echo Checkout stage passed'
+            }
+        }
+        stage('Build') {
+            steps {
+                sh '''
+                    cd java-maven-sonar-argocd-helm-k8s/spring-boot-app
+                    mvn clean compile
+                '''
+                sh 'echo Build stage passed'
+            }
+        }
+        stage('Unit Test') {
+            steps {
+                sh '''
+                    cd java-maven-sonar-argocd-helm-k8s/spring-boot-app
+                    mvn test
+                '''
+                sh 'echo Unit Test stage passed'
             }
         }
     }
