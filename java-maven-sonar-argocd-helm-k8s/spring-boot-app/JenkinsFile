@@ -45,26 +45,19 @@ pipeline {
               }
           }
         }
-        stage('Docker Build') {
-            agent {
-                docker {
-                    image 'docker:cli'
-                    args '--entrypoint="" -v /var/run/docker.sock:/var/run/docker.sock'
-                }
-            }
-
+        stage('Build and Test') {
             steps {
+                sh 'ls -ltr'
+
                 sh '''
                     cd java-maven-sonar-argocd-helm-k8s/spring-boot-app
-
-                    ls -lh target/
-
-                    docker --version
-
-                    docker build -t spring-boot-app:v1 .
+                    mvn clean package
                 '''
 
-                sh 'echo Docker Build stage passed'
+                stash name: 'spring-boot-jar',
+                      includes: 'java-maven-sonar-argocd-helm-k8s/spring-boot-app/target/spring-boot-web.jar'
+
+                sh 'echo Build and Test stage passed'
             }
         }
     }
