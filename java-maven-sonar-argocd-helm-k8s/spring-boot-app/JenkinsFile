@@ -2,7 +2,7 @@ pipeline {
     agent {
         docker {
             image 'maven:3.9.11-eclipse-temurin-11'
-            args '--user root'
+            args '--user root -v /var/run/docker.sock:/var/run/docker.sock'
         }
     }
 
@@ -43,6 +43,24 @@ pipeline {
 
                   sh 'echo Static Code Analysis stage passed'
               }
+          }
+        }
+        stage('Docker Build') {
+          agent {
+              docker {
+                  image 'docker:cli'
+                  args '-v /var/run/docker.sock:/var/run/docker.sock'
+              }
+          }
+
+          steps {
+              sh '''
+                  cd java-maven-sonar-argocd-helm-k8s/spring-boot-app
+
+                  docker build -t spring-boot-app:v1 .
+              '''
+
+              sh 'echo Docker Build stage passed'
           }
         }
     }
