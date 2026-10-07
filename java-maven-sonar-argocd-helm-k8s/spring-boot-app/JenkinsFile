@@ -14,12 +14,19 @@ pipeline {
             }
         }
         stage('Build and Test') {
-          steps {
-            sh 'ls -ltr'
-            // build the project and create a JAR file
-            sh 'cd java-maven-sonar-argocd-helm-k8s/spring-boot-app && mvn clean package'
-            sh 'echo Build and Test stage passed'
-          }
+            steps {
+                sh 'ls -ltr'
+
+                sh '''
+                    cd java-maven-sonar-argocd-helm-k8s/spring-boot-app
+                    mvn clean package
+                '''
+
+                stash name: 'spring-boot-jar',
+                      includes: 'java-maven-sonar-argocd-helm-k8s/spring-boot-app/target/spring-boot-web.jar'
+
+                sh 'echo Build and Test stage passed'
+            }
         }
         stage('Static Code Analysis') {
           environment {
@@ -45,20 +52,27 @@ pipeline {
               }
           }
         }
-        stage('Build and Test') {
-            steps {
-                sh 'ls -ltr'
+        stage('Docker Build') {
+          agent {
+              label 'built-in'
+          }
 
-                sh '''
-                    cd java-maven-sonar-argocd-helm-k8s/spring-boot-app
-                    mvn clean package
-                '''
+          steps {
+              unstash 'spring-boot-jar'
 
-                stash name: 'spring-boot-jar',
-                      includes: 'java-maven-sonar-argocd-helm-k8s/spring-boot-app/target/spring-boot-web.jar'
+              sh '''
+                  cd java-maven-sonar-argocd-helm-k8s/spring-boot-app
 
-                sh 'echo Build and Test stage passed'
-            }
+                  ls -lh target/
+
+                  docker --version
+
+                  docker build -t spring-boot-app:v1 .
+              '''
+
+              sh 'echo Docker Build stage passed'
+          }
         }
+
     }
 }
