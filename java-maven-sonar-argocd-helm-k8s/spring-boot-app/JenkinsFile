@@ -2,7 +2,9 @@ pipeline {
     agent {
         label 'built-in'
     }
-
+    environment {
+        DOCKER_IMAGE = "sajancoder1719/spring-boot-app:${BUILD_NUMBER}"
+    }
     stages {
 
         stage('Checkout') {
@@ -53,18 +55,34 @@ pipeline {
                 sh '''
                     cd java-maven-sonar-argocd-helm-k8s/spring-boot-app
 
-                    echo "===== Docker CLI ====="
-                    which docker
-                    docker --version
-
-                    echo "===== JAR ====="
-                    ls -lh target/
-
-                    echo "===== Docker Build ====="
-                    docker build -t spring-boot-app:v1 .
+                    docker build -t $DOCKER_IMAGE .
                 '''
 
                 sh 'echo Docker Build stage passed'
+            }
+        }
+
+        stage('Docker Push') {
+            steps {
+                withCredentials([
+                    usernamePassword(
+                        credentialsId: 'docker-cred',
+                        usernameVariable: 'DOCKER_USERNAME',
+                        passwordVariable: 'DOCKER_PASSWORD'
+                    )
+                ]) {
+                    sh '''
+                        echo "$DOCKER_PASSWORD" | docker login \
+                            -u "$DOCKER_USERNAME" \
+                            --password-stdin
+
+                        docker push $DOCKER_IMAGE
+
+                        docker logout
+                    '''
+                }
+
+                sh 'echo Docker Push stage passed'
             }
         }
     }
