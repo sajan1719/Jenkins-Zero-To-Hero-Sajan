@@ -13,23 +13,13 @@ pipeline {
                 sh 'echo Checkout stage passed'
             }
         }
-        stage('Build') {
-            steps {
-                sh '''
-                    cd java-maven-sonar-argocd-helm-k8s/spring-boot-app
-                    mvn clean compile
-                '''
-                sh 'echo Build stage passed'
-            }
-        }
-        stage('Unit Test') {
-            steps {
-                sh '''
-                    cd java-maven-sonar-argocd-helm-k8s/spring-boot-app
-                    mvn test
-                '''
-                sh 'echo Unit Test stage passed'
-            }
-        }
+    stage('Build and Test') {
+      steps {
+        sh 'ls -ltr'
+        // build the project and create a JAR file
+        sh 'cd java-maven-sonar-argocd-helm-k8s/spring-boot-app && mvn clean package'
+        sh 'echo Build and Test stage passed'
+      }
+    }
     }
 }
