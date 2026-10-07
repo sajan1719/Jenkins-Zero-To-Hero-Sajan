@@ -2,9 +2,11 @@ pipeline {
     agent {
         label 'built-in'
     }
+
     environment {
         DOCKER_IMAGE = "sajancoder1719/spring-boot-app:${BUILD_NUMBER}"
     }
+
     stages {
 
         stage('Checkout') {
@@ -59,6 +61,27 @@ pipeline {
                 '''
 
                 sh 'echo Docker Build stage passed'
+            }
+        }
+
+        stage('Snyk Image Scan') {
+            steps {
+                withCredentials([
+                    string(
+                        credentialsId: 'snyk-token',
+                        variable: 'SNYK_TOKEN'
+                    )
+                ]) {
+                    sh '''
+                        echo "Starting Snyk container scan..."
+
+                        snyk container test $DOCKER_IMAGE \
+                            --file=java-maven-sonar-argocd-helm-k8s/spring-boot-app/Dockerfile \
+                            --severity-threshold=high
+                    '''
+                }
+
+                sh 'echo Snyk Image Scan stage passed'
             }
         }
 

@@ -1,13 +1,17 @@
-# You can change this base image to anything else
-# But make sure to use the correct version of Java
-FROM eclipse-temurin:11-jre-jammy
+FROM eclipse-temurin:17-jre-jammy
 
-# Simply the artifact path
 ARG artifact=target/spring-boot-web.jar
 
 WORKDIR /opt/app
 
+RUN apt-get update \
+    && apt-get install -y --only-upgrade \
+        curl \
+        libcurl4 \
+        openssl \
+        libssl3 \
+    && rm -rf /var/lib/apt/lists/*
+
 COPY ${artifact} app.jar
 
-# This should not be changed
-ENTRYPOINT ["java","-jar","app.jar"]
+ENTRYPOINT ["java", "-jar", "app.jar"]
