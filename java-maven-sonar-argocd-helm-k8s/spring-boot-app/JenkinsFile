@@ -61,18 +61,27 @@ pipeline {
               unstash 'spring-boot-jar'
 
               sh '''
-                  cd java-maven-sonar-argocd-helm-k8s/spring-boot-app
+                  echo "===== Docker Environment ====="
+                  whoami
+                  pwd
 
-                  ls -lh target/
-
+                  echo "===== Docker CLI ====="
+                  which docker
                   docker --version
 
+                  echo "===== Docker Context ====="
+                  docker context show
+
+                  echo "===== JAR ====="
+                  ls -lh java-maven-sonar-argocd-helm-k8s/spring-boot-app/target/
+
+                  echo "===== Docker Build ====="
+                  cd java-maven-sonar-argocd-helm-k8s/spring-boot-app
                   docker build -t spring-boot-app:v1 .
               '''
 
               sh 'echo Docker Build stage passed'
           }
         }
-
     }
 }
