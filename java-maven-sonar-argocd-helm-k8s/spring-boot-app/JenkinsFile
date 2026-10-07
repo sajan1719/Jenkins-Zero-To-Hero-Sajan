@@ -57,6 +57,8 @@ pipeline {
               sh '''
                   cd java-maven-sonar-argocd-helm-k8s/spring-boot-app
 
+                  ls -lh target/
+
                   docker build -t spring-boot-app:v1 .
               '''
 
