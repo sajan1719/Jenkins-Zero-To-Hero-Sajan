@@ -1,87 +1,71 @@
 pipeline {
     agent {
-        docker {
-            image 'maven:3.9.11-eclipse-temurin-11'
-            args '--user root -v /var/run/docker.sock:/var/run/docker.sock'
-        }
+        label 'built-in'
     }
 
     stages {
+
         stage('Checkout') {
             steps {
                 checkout scm
                 sh 'echo Checkout stage passed'
             }
         }
+
         stage('Build and Test') {
             steps {
-                sh 'ls -ltr'
-
                 sh '''
                     cd java-maven-sonar-argocd-helm-k8s/spring-boot-app
                     mvn clean package
                 '''
 
-                stash name: 'spring-boot-jar',
-                      includes: 'java-maven-sonar-argocd-helm-k8s/spring-boot-app/target/spring-boot-web.jar'
-
                 sh 'echo Build and Test stage passed'
             }
         }
+
         stage('Static Code Analysis') {
-          environment {
-              SONAR_URL = "http://host.docker.internal:9000"
-          }
+            environment {
+                SONAR_URL = "http://localhost:9000"
+            }
 
-          steps {
-              withCredentials([
-                  string(
-                      credentialsId: 'sonar-new-token',
-                      variable: 'SONAR_AUTH_TOKEN'
-                  )
-              ]) {
-                  sh '''
-                      cd java-maven-sonar-argocd-helm-k8s/spring-boot-app
+            steps {
+                withCredentials([
+                    string(
+                        credentialsId: 'sonar-new-token',
+                        variable: 'SONAR_AUTH_TOKEN'
+                    )
+                ]) {
+                    sh '''
+                        cd java-maven-sonar-argocd-helm-k8s/spring-boot-app
 
-                      mvn org.sonarsource.scanner.maven:sonar-maven-plugin:sonar \
-                        -Dsonar.token=$SONAR_AUTH_TOKEN \
-                        -Dsonar.host.url=$SONAR_URL
-                  '''
+                        mvn org.sonarsource.scanner.maven:sonar-maven-plugin:sonar \
+                          -Dsonar.token=$SONAR_AUTH_TOKEN \
+                          -Dsonar.host.url=$SONAR_URL
+                    '''
 
-                  sh 'echo Static Code Analysis stage passed'
-              }
-          }
+                    sh 'echo Static Code Analysis stage passed'
+                }
+            }
         }
+
         stage('Docker Build') {
-          agent {
-              label 'built-in'
-          }
+            steps {
+                sh '''
+                    cd java-maven-sonar-argocd-helm-k8s/spring-boot-app
 
-          steps {
-              unstash 'spring-boot-jar'
+                    echo "===== Docker CLI ====="
+                    which docker
+                    docker --version
 
-              sh '''
-                  echo "===== Docker Environment ====="
-                  whoami
-                  pwd
+                    echo "===== JAR ====="
+                    ls -lh target/
 
-                  echo "===== Docker CLI ====="
-                  which docker
-                  docker --version
+                    echo "===== Docker Build ====="
+                    docker build -t spring-boot-app:v1 .
+                '''
 
-                  echo "===== Docker Context ====="
-                  docker context show
-
-                  echo "===== JAR ====="
-                  ls -lh java-maven-sonar-argocd-helm-k8s/spring-boot-app/target/
-
-                  echo "===== Docker Build ====="
-                  cd java-maven-sonar-argocd-helm-k8s/spring-boot-app
-                  docker build -t spring-boot-app:v1 .
-              '''
-
-              sh 'echo Docker Build stage passed'
-          }
+                sh 'echo Docker Build stage passed'
+            }
         }
     }
 }
