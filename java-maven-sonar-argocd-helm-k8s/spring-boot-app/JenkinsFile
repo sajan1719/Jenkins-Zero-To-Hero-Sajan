@@ -46,24 +46,26 @@ pipeline {
           }
         }
         stage('Docker Build') {
-          agent {
-              docker {
-                  image 'docker:cli'
-                  args '-v /var/run/docker.sock:/var/run/docker.sock'
-              }
-          }
+            agent {
+                docker {
+                    image 'docker:cli'
+                    args '--entrypoint="" -v /var/run/docker.sock:/var/run/docker.sock'
+                }
+            }
 
-          steps {
-              sh '''
-                  cd java-maven-sonar-argocd-helm-k8s/spring-boot-app
+            steps {
+                sh '''
+                    cd java-maven-sonar-argocd-helm-k8s/spring-boot-app
 
-                  ls -lh target/
+                    ls -lh target/
 
-                  docker build -t spring-boot-app:v1 .
-              '''
+                    docker --version
 
-              sh 'echo Docker Build stage passed'
-          }
+                    docker build -t spring-boot-app:v1 .
+                '''
+
+                sh 'echo Docker Build stage passed'
+            }
         }
     }
 }
